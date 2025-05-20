@@ -6,5 +6,5 @@
 
 | Integration Name | Description |
 |:-|:-|
-| [OCI Command Run](runcommand) | Run commands on instances to deploy the CrowdStrike Falcon Sensor. |
+| [OCI Run Command](runcommand) | Run commands on instances to deploy the CrowdStrike Falcon Sensor. |
 
