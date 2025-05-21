@@ -86,7 +86,7 @@ echo Download successful: !TEMP_INSTALLER!
 
 :: Execute the installer with parameters
 echo Running installer...
-"!TEMP_INSTALLER!" --verbose --enable-file-logging --oci-compartment-id %OCID% --oci-vault-name %VAULT_NAME%
+"!TEMP_INSTALLER!" --verbose --enable-file-logging --user-agent=falcon-oci-run-cmd/0.1.0 --oci-compartment-id %OCID% --oci-vault-name %VAULT_NAME%
 if %errorlevel% neq 0 (
     echo Installer execution failed
     goto :error

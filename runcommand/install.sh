@@ -57,7 +57,7 @@ if [ $? -eq 0 ]; then
     # Make the installer executable
     chmod +x "/tmp/${LATEST_INSTALLER}"
     # You can add execution command here if needed
-    sudo /tmp/"${LATEST_INSTALLER}" --verbose --enable-file-logging --oci-compartment-id $OCID --oci-vault-name $VAULT_NAME
+    sudo /tmp/"${LATEST_INSTALLER}" --verbose --enable-file-logging --user-agent=falcon-oci-run-cmd/0.1.0 --oci-compartment-id $OCID --oci-vault-name $VAULT_NAME
     exit 0
 else
     echo "Failed to download installer"
