@@ -27,9 +27,20 @@ fi
 # Fetch the list of objects in the bucket
 echo "Fetching available installers..."
 LISTING=$(curl -s "${BUCKET_URL}/")
-
 if [ $? -ne 0 ]; then
     echo "Failed to get listing from bucket"
+    exit 1
+fi
+
+if echo "$LISTING" | grep -q '"code".*"message"'; then
+    echo "Error response received from bucket:"
+
+    # Extract error details using grep and sed (no jq dependency)
+    ERROR_CODE=$(echo "$LISTING" | grep -o '"code":"[^"]*"' | sed 's/"code":"//g' | sed 's/"//g')
+    ERROR_MESSAGE=$(echo "$LISTING" | grep -o '"message":"[^"]*"' | sed 's/"message":"//g' | sed 's/"//g')
+
+    echo "Error Code: $ERROR_CODE"
+    echo "Error Message: $ERROR_MESSAGE"
     exit 1
 fi
 
