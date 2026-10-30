@@ -73,7 +73,6 @@ Before using OCI Run Command to deploy the CrowdStrike Falcon Sensor, ensure you
    Allow group <your-dynamic-group-name> to manage instance-agent-command-family in tenancy
    Allow dynamic-group <your-dynamic-group-name> to use instance-agent-command-execution-family in tenancy
    Allow dynamic-group <your-dynamic-group-name> to read objects in tenancy where all {target.bucket.name = '<your_bucket_name>'}
-   Allow dynamic-group <your-dynamic-group-name> to manage objects in tenancy where all {target.bucket.name = '<your_bucket_name>'}
    Allow dynamic-group <your-dynamic-group-name> to read secret-family in tenancy where target.vault.id = '<your-vault-id>'
    Allow dynamic-group <your-dynamic-group-name> to inspect vaults in tenancy
    ```
