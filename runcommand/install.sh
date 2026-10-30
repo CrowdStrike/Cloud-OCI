@@ -60,15 +60,25 @@ LATEST_INSTALLER=$(echo "$INSTALLERS" | sort -V | tail -n 1)
 echo "Found latest installer: $LATEST_INSTALLER"
 DOWNLOAD_URL="${BUCKET_URL}/${LATEST_INSTALLER}"
 
+# Stage the installer in a private directory (mode 0700, random name) so other
+# local users cannot pre-create or replace it before it runs with sudo
+STAGE_DIR=$(mktemp -d)
+if [ $? -ne 0 ] || [ -z "$STAGE_DIR" ]; then
+    echo "Failed to create staging directory"
+    exit 1
+fi
+trap 'rm -rf "$STAGE_DIR"' EXIT
+INSTALLER_PATH="${STAGE_DIR}/${LATEST_INSTALLER}"
+
 echo "Downloading ${LATEST_INSTALLER}..."
-curl -fsSL -o "/tmp/${LATEST_INSTALLER}" "${DOWNLOAD_URL}"
+curl -fsSL -o "${INSTALLER_PATH}" "${DOWNLOAD_URL}"
 
 if [ $? -eq 0 ]; then
-    echo "Download successful: /tmp/${LATEST_INSTALLER}"
+    echo "Download successful: ${INSTALLER_PATH}"
     # Make the installer executable
-    chmod +x "/tmp/${LATEST_INSTALLER}"
+    chmod +x "${INSTALLER_PATH}"
     # You can add execution command here if needed
-    sudo /tmp/"${LATEST_INSTALLER}" --verbose --enable-file-logging --user-agent=oci-run-cmd/0.1.0 --oci-compartment-id $OCID --oci-vault-name $VAULT_NAME
+    sudo "${INSTALLER_PATH}" --verbose --enable-file-logging --user-agent=oci-run-cmd/0.1.0 --oci-compartment-id "$OCID" --oci-vault-name "$VAULT_NAME"
     exit 0
 else
     echo "Failed to download installer"

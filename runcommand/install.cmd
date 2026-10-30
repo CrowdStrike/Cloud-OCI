@@ -1,5 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
+set "STAGE_CREATED="
 
 :: Set required variables
 set "OCID="
@@ -40,16 +41,33 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
 
 echo Detected architecture: %ARCH%
 
-:: Create a temporary file for the JSON response
-set "TEMP_JSON=%TEMP%\bucket_listing.json"
-set "TEMP_INSTALLERS=%TEMP%\installers.txt"
-
 :: Check if PowerShell is available
 where powershell >nul 2>&1
 if %errorlevel% neq 0 (
     echo Error: PowerShell is not available. Cannot proceed without PowerShell or curl.
     goto :error
 )
+
+:: Stage downloads in a private directory (random name, SYSTEM and Administrators only)
+:: so other local users cannot pre-create or replace files before the installer runs
+set "STAGE_DIR="
+for /f "tokens=*" %%g in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString()"') do set "STAGE_DIR=%TEMP%\falcon-oci-%%g"
+if "%STAGE_DIR%"=="" (
+    echo Failed to generate staging directory name
+    goto :error
+)
+mkdir "%STAGE_DIR%" 2>nul
+if %errorlevel% neq 0 (
+    echo Failed to create staging directory
+    goto :error
+)
+set "STAGE_CREATED=1"
+icacls "%STAGE_DIR%" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F >nul
+if %errorlevel% neq 0 (
+    echo Failed to restrict staging directory permissions
+    goto :error
+)
+set "TEMP_JSON=%STAGE_DIR%\bucket_listing.json"
 
 :: Fetch the list of objects in the bucket using PowerShell with TLS 1.2
 echo Fetching available installers...
@@ -72,7 +90,7 @@ if "!LATEST_INSTALLER!"=="" (
 
 echo Found latest installer: !LATEST_INSTALLER!
 set "DOWNLOAD_URL=%BUCKET_URL%/!LATEST_INSTALLER!"
-set "TEMP_INSTALLER=%TEMP%\!LATEST_INSTALLER!"
+set "TEMP_INSTALLER=%STAGE_DIR%\!LATEST_INSTALLER!"
 
 :: Download the installer using PowerShell with TLS 1.2
 echo Downloading !LATEST_INSTALLER!...
@@ -86,15 +104,21 @@ echo Download successful: !TEMP_INSTALLER!
 
 :: Execute the installer with parameters
 echo Running installer...
-"!TEMP_INSTALLER!" --verbose --enable-file-logging --user-agent=oci-run-cmd/0.1.0 --oci-compartment-id %OCID% --oci-vault-name %VAULT_NAME%
+"!TEMP_INSTALLER!" --verbose --enable-file-logging --user-agent=oci-run-cmd/0.1.0 --oci-compartment-id "%OCID%" --oci-vault-name "%VAULT_NAME%"
 if %errorlevel% neq 0 (
     echo Installer execution failed
     goto :error
 )
 
 echo Installation completed successfully
+call :cleanup
 goto :eof
 
 :error
 echo Script execution failed
+call :cleanup
 exit /b 1
+
+:cleanup
+if defined STAGE_CREATED rmdir /s /q "%STAGE_DIR%" 2>nul
+goto :eof

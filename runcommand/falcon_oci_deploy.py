@@ -175,6 +175,10 @@ class FalconRunCommandManager:
                 ).data
 
                 for instance in instances:
+                    # Skip instances that don't match the requested name
+                    if instance_name is not None and instance.display_name.lower() != instance_name.lower():
+                        continue
+
                     # Detect OS type
                     os_type = self.get_instance_os_type(instance.id)
                     all_instances.append({
@@ -185,9 +189,6 @@ class FalconRunCommandManager:
                         'lifecycle_state': instance.lifecycle_state,
                         'os_type': os_type
                     })
-
-                    if instance_name is not None and instance.display_name.lower() == instance_name.lower():
-                        break
 
                 logger.info("Found %d running instances in compartment %s", len(instances), compartment_id)
 
